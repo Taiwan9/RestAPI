@@ -6,15 +6,25 @@ router.get('/', (req, res, next) => {
     mysql.getConnection((error, conn) => {
         if (error) { return res.status(500).send({ error: error }) }
         conn.query(
-            'SELECT * FROM pedidos;',
+            `SELECT pedidos.id_pedidos,
+                    pedidos.quantidade,
+                    Produtos.id_produtos,
+                    Produtos.nome,
+                    Produtos.preco
+                FROM pedidos
+            INNER JOIN Produtos
+                ON Produtos.id_produtos = pedidos.id_produtos;`,
             (error, resultado, fields) => {
                 if (error) { return res.status(500).send({ error: error }) }
                 const response = {
-                    quantidade: resultado.length,
                     pedidos: resultado.map(pedido => {
                         return {
                             id_pedidos: pedido.id_pedidos,
-                            id_produtos: pedido.id_produtos,
+                            produto:{
+                                id_produtos: pedido.id_produtos,
+                                nome: pedido.nome,
+                                preco: pedido.preco
+                            },      
                             quantidade: pedido.quantidade,
                             request: {
                                 tipo: 'GET',

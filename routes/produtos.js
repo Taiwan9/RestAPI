@@ -1,6 +1,36 @@
 const express = require('express')
 const router = express.Router()
 const mysql = require('../mysql').pool
+const multer = require('multer')
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './uploads/')
+    },
+    filename: function (req, file, cb) {
+        let data = new Date().toISOString().replace(/:/g, '-') + '-';
+        cb(null, data + file.originalname);
+
+    }
+})
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true)
+    } else {
+        cb(null, false)
+    }
+
+
+}
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 1024 * 1024 * 20
+    },
+    fileFilter: fileFilter
+})
 
 router.get('/', (req, res, next) => {
 
@@ -21,6 +51,7 @@ router.get('/', (req, res, next) => {
                             id_produtos: prod.id_produtos,
                             nome: prod.nome,
                             preco: prod.preco,
+                            imagem_produtos: prod.imagem_produtos,
                             request: {
                                 tipo: 'GET',
                                 descricao: 'Retorna os detalhes de um produto especifico',
@@ -35,12 +66,12 @@ router.get('/', (req, res, next) => {
     })
 })
 
-router.post('/', (req, res, next) => {
+router.post('/', upload.single('produto_imagem'), (req, res, next) => {
     mysql.getConnection((error, conn) => {
         if (error) { return res.status(500).send({ error: error }) }
         conn.query(
-            'insert into Produtos (nome, preco) values(?,?)',
-            [req.body.nome, req.body.preco],
+            'insert into Produtos (nome, preco, imagem_produtos) values(?,?,?)',
+            [req.body.nome, req.body.preco, req.file.path],
             (error, result, field) => {
                 conn.release();
                 if (error) { res.status(500).send({ error: error }) }
@@ -50,19 +81,16 @@ router.post('/', (req, res, next) => {
                         id_produto: result.id_produto,
                         nome: req.body.nome,
                         preco: req.body.preco,
-                        produtoCriado: {
-                            id_produtos: result.id_produtos,
-                            nome: result.nome,
-                            preco: result.preco,
-                            request: {
-                                tipo: 'GET',
-                                descricao: 'Retorna todos os produtos',
-                                link: 'http://localhost:3100/produtos'
-                            }
+                        imagem_produtos: req.file.path,
+                        request: {
+                            tipo: 'GET',
+                            descricao: 'Retorna todos os produtos',
+                            link: 'http://localhost:3100/produtos'
                         }
+
                     }
                 }
-               return res.status(201).send(response)
+                return res.status(201).send(response)
             }
         )
     })
@@ -75,8 +103,8 @@ router.get('/:id_produto', (req, res, next) => {
             'SELECT * FROM Produtos WHERE id_produtos = ?;',
             [req.params.id_produto],
             (error, result, fields) => {
-                if (error) { return res.status(500).send({ error: error })}
-                if(result.length === 0){
+                if (error) { return res.status(500).send({ error: error }) }
+                if (result.length === 0) {
                     return res.status(404).send({
                         mensagem: 'Não foi encontrada Produto com esse registro'
                     })
@@ -86,6 +114,7 @@ router.get('/:id_produto', (req, res, next) => {
                         id_produto: result[0].id_produto,
                         nome: result[0].nome,
                         preco: result[0].preco,
+                        imagem_produtos: result[0].imagem_produtos,
                         produtoCriado: {
                             id_produtos: result.id_produtos,
                             nome: result.nome,
@@ -98,7 +127,7 @@ router.get('/:id_produto', (req, res, next) => {
                         }
                     }
                 }
-               return res.status(200).send(response)
+                return res.status(200).send(response)
             }
         )
     })
@@ -118,7 +147,7 @@ router.patch('/', (req, res, next) => {
             (error, result, field) => {
                 conn.release();
                 if (error) {
-                    res.status(500).send({error: error})
+                    res.status(500).send({ error: error })
                 }
                 const response = {
                     mensagem: 'Produto atualizado com sucesso !',
@@ -138,7 +167,7 @@ router.patch('/', (req, res, next) => {
                         }
                     }
                 }
-               return res.status(202).send(response)
+                return res.status(202).send(response)
             }
         )
     })
@@ -152,15 +181,16 @@ router.delete('/', (req, res, next) => {
             [req.body.id_produto],
             (error, resultado, field) => {
                 conn.release();
-                if (error) {res.status(500).send({error: error})
+                if (error) {
+                    res.status(500).send({ error: error })
                 }
                 const response = {
                     mensagem: 'Produto removido com sucesso',
-                    request:{
+                    request: {
                         tipo: 'POST',
                         descricao: 'Insere um Produto Novo',
                         url: 'http://localhost:3100/produtos',
-                        body:{
+                        body: {
                             nome: 'String',
                             preco: 'Number'
                         }
