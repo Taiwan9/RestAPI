@@ -4,6 +4,8 @@
         "MYSQL_PASSWORD":"172839",
         "MYSQL_DATABASE":"ecommecer",
         "MYSQL_HOST":"localhost",
-        "MYSQL_PORT": 3307
+        "MYSQL_PORT": 3307,
+
+        "JWT_KEY": "172839@1"
     }
 }
