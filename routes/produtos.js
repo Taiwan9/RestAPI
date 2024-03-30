@@ -43,6 +43,17 @@ router.post('/',
     produtosControllers.postProdutos
 )
 
+router.post(
+    '/:id_produto/imagem',
+    login.obrigatorio,
+    upload.single('produto_imagem'),
+    produtosControllers.postImagem
+)
+router.get(
+    '/:id_produto/imagens',
+    produtosControllers.getImagens
+)
+
 router.get('/:id_produto',
     produtosControllers.getProdutosId
 )

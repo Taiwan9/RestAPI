@@ -27,6 +27,28 @@ exports.getProdutos = async (req, res, next) => {
 
 }
 
+exports.getImagens = async (req, res, next) => {
+    try {
+        const query = 'SELECT * FROM imagens_produtos WHERE id_produtos = ?;'
+        const result = await mysql.execute(query, [req.params.id_produto])
+        const response = {
+            quantidade: result.length,
+            imagens: result.map(img => {
+                return {
+                    id_produtos: parseInt(req.params.id_produto),
+                    id_image: img.id_imagens,
+                    caminho: img.caminho
+                }
+            })
+        }
+        return res.status(200).send(response)
+
+    } catch (error) {
+        return res.status(500).send({ error: error })
+    }
+
+}
+
 exports.getProdutosId = async (req, res, next) => {
     try {
         const query = 'SELECT * FROM Produtos WHERE id_produtos = ?;'
@@ -69,6 +91,31 @@ exports.postProdutos = async (req, res, next) => {
                 request: {
                     tipo: 'GET',
                     descricao: 'Retorna todos os produtos',
+                    link: 'http://localhost:3100/produtos'
+                }
+
+            }
+        }
+        return res.status(201).send(response)
+
+    } catch (error) {
+        return res.status(500).send({ error: error })
+    }
+
+}
+exports.postImagem = async (req, res, next) => {
+    try {
+        const query = 'insert into imagens_produtos (id_produtos, caminho) values(?,?)'
+        const result = await mysql.execute(query, [req.params.id_produto, req.file.path])
+        const response = {
+            mensagem: 'Imagem inserida com sucesso !',
+            imagemCriada: {
+                id_produtos: req.params.id_produto,
+                id_imagens: result.insertId,
+                imagem_produtos: req.file.path,
+                request: {
+                    tipo: 'GET',
+                    descricao: 'Retorna todas as imagens',
                     link: 'http://localhost:3100/produtos'
                 }
 
