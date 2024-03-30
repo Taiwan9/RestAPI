@@ -2,7 +2,18 @@ const mysql = require('../mysql')
 
 exports.getProdutos = async (req, res, next) => {
     try {
-        const result = await mysql.execute('SELECT * FROM Produtos;')
+        let name = ''
+        if(req.query.nome){
+            name = req.query.nome
+        }
+        const query=
+      `
+        SELECT * 
+        FROM Produtos
+        WHERE categoryId = ?
+        AND(nome LIKE '${name}');
+        `;
+        const result = await mysql.execute(query, [req.query.categoryId])
         const response = {
             quantidade: result.length,
             produtos: result.map(prod => {
@@ -79,8 +90,8 @@ exports.getProdutosId = async (req, res, next) => {
 
 exports.postProdutos = async (req, res, next) => {
     try {
-        const query = 'insert into Produtos (nome, preco, imagem_produtos) values(?,?,?)'
-        const result = await mysql.execute(query, [req.body.nome, req.body.preco, req.file.path])
+        const query = 'insert into Produtos (nome, preco, imagem_produtos, categoryId) values(?,?,?,?)'
+        const result = await mysql.execute(query, [req.body.nome, req.body.preco, req.file.path, req.body.categoryId])
         const response = {
             mensagem: 'Produto inserido com sucesso !',
             pordutoCriado: {
@@ -88,6 +99,7 @@ exports.postProdutos = async (req, res, next) => {
                 nome: req.body.nome,
                 preco: req.body.preco,
                 imagem_produtos: req.file.path,
+                categoryId: req.body.categoryId,
                 request: {
                     tipo: 'GET',
                     descricao: 'Retorna todos os produtos',

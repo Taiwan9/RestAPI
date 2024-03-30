@@ -7,6 +7,7 @@ const rotasProdutos = require('./routes/produtos')
 const rotasPedidos = require('./routes/pedidos')
 const rotasUsuarios = require('./routes/usuarios')
 const rotasImagens = require('./routes/imagens')
+const rotasCategorias = require('./routes/categorias')
 
 
 app.use(morgan('dev'))
@@ -32,6 +33,7 @@ app.use('/produtos', rotasProdutos)
 app.use('/pedidos', rotasPedidos)
 app.use('/usuarios', rotasUsuarios)
 app.use('/imagens', rotasImagens)
+app.use('/categorias', rotasCategorias)
 
 //Quando nao encontra rota, entra aqui
 app.use((req, res, next) => {
